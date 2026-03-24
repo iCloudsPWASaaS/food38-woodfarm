@@ -1,6 +1,6 @@
 php artisan media-library:regenerate
 php artisan media-library:regenerate --ids=73
-just need remebmer for image - it's id will be media_id and then media table id will be th folder name in which php artisan media-library:regenerate
+just need to remebmer for image - it's id will be media_id and then media table id will be th folder name in which php artisan media-library:regenerate
 will generate conversions
 
 --------------------
@@ -320,3 +320,93 @@ gitignore# Service account credentials
 *service-account*.json
 *credentials*.json
 /public/storage/
+
+---------------------app url/api url
+F:\MyProjects2025\foodking32\main38\resources\views\master.blade.php
+F:\MyProjects2025\foodking32\main38\config\filesystems.php
+F:\MyProjects2025\foodking32\main38\resources\js\config\env.js
+
+----------------------online order with jeat, uber & deliveroo
+ALTER TABLE `orders`
+ADD COLUMN `provider_source` VARCHAR(255) NULL AFTER `source`,
+ADD COLUMN `provider_order_id` VARCHAR(255) NULL AFTER `provider_source`,
+ADD COLUMN `provider_status` VARCHAR(255) NULL AFTER `provider_order_id`,
+ADD COLUMN `provider_payload` JSON NULL AFTER `provider_status`;
+
+app/Services/Providers/
+  ├── DeliveryProviderInterface.php
+  ├── MockDeliveryService.php
+  ├── UberEatsService.php
+  ├── DeliverooService.php
+  └── JustEatService.php
+app/Models/MerchantConfig.php
+app/Http/Controllers/ProviderWebhookController.php
+
+PHP (Backend)
+FirebaseService.php
+OnlineOrderController.php
+Order.php
+api.php
+
+Vue (Frontend)
+5. OnlineOrderComponent.vue
+6. OnlineOrderListComponent.vue
+7. OnlineOrderMapComponent.vue
+8. OnlineOrderReasonComponent.vue
+9. OnlineOrderReceiptComponent.vue
+10. OnlineOrderShowComponent.vue
+11. BackendNavbarComponent.vue
+
+JavaScript (Vuex)
+12. onlineOrder.js
+
+FileNamespace / Location
+MerchantController.php App\Http\Controllers\Admin
+MerchantRequest.php App\Http\Requests
+MerchantResource.php App\Http\Resources
+MerchantService.php App\Services
+MerchantSettingComponent.vue Vue component
+
+note -
+no need to send ->
+"user_id": 1,
+"branch_id": 0,
+and need to consider ->
+source and order_type
+
+{
+    "order_id": "UBER-TEST-019",
+    "order_serial_no": "ORD-2025-999",
+
+    "subtotal": 25.00,
+    "delivery_charge": 3.50,
+    "total_tax": 2.00,
+    "total": 30.50,
+    "order_type": 10,
+    "payment_method": 1,
+    "payment_status": 2,
+    "status": "received",
+    "label": "Home",
+    "address": "123 Test Street, London",
+    "apartment": "Flat 4B",
+    "latitude": "51.5074",
+    "longitude": "-0.1278"
+}
+
+------------------
+C:\Windows\system32>docker exec -it food38-app find /app/storage -name "service-account-file.json"
+/app/storage/app/public/125/service-account-file.json
+------------------
+
+notification files -
+F:\MyProjects2025\foodking32\main38\app\Http\Controllers\Admin\NotificationController.php
+F:\MyProjects2025\foodking32\main38\app\Services\NotificationService.php
+F:\MyProjects2025\foodking32\main38\app\Services\PushNotificationService.php
+F:\MyProjects2025\foodking32\main38\app\Services\FirebaseService.php -> path for service-account-file.json has been direct now 
+
+----------------------------
+removed backend menu -
+POS & Orders
+Communications
+Reports -> Credit Balance Report
+Settings -> License

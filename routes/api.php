@@ -103,6 +103,13 @@ use App\Http\Controllers\Frontend\CountryCodeController as FrontendCountryCodeCo
 use App\Http\Controllers\Frontend\ItemCategoryController as FrontendItemCategoryController;
 use App\Http\Controllers\Frontend\DeliveryBoyOrderController as FrontendDeliveryBoyOrderController;
 
+//extra
+use App\Http\Controllers\Admin\MerchantController;
+use App\Http\Controllers\ProviderWebhookController;
+use App\Http\Controllers\PrinterController;
+ 
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -222,6 +229,10 @@ Route::prefix('admin')->name('admin.')->middleware(['installed', 'apiKey', 'loca
             Route::get('/export', [ItemCategoryController::class, 'export']);
             Route::get('/download-sample', [ItemCategoryController::class, 'downloadSample']);
             Route::post('/import/file', [ItemCategoryController::class, 'import']);
+        });
+
+        Route::prefix('product-category')->name('product-category.')->group(function () { //extra
+            Route::get('/depth-tree', [ItemCategoryController::class, 'depthTree']);
         });
 
         Route::prefix('item-attribute')->name('item-attribute.')->group(function () {
@@ -373,6 +384,12 @@ Route::prefix('admin')->name('admin.')->middleware(['installed', 'apiKey', 'loca
             Route::post('/change-status/{kioskMachine}', [KioskMachineController::class, 'changeStatus']);
             Route::delete('/{kioskMachine}', [KioskMachineController::class, 'destroy']);
             Route::post('/logout/{kioskMachine}', [KioskMachineController::class, 'logout']);
+        });
+
+        //extra
+        Route::prefix('merchant')->name('merchant.')->group(function () {
+            Route::get('/', [MerchantController::class, 'index']);
+            Route::match(['put', 'patch'], '/', [MerchantController::class, 'update']);
         });
     });
 
@@ -823,3 +840,13 @@ Route::prefix('table')->name('table.')->middleware(['installed', 'apiKey', 'loca
         Route::post('/', [TableOrderController::class, 'store']);
     });
 });
+
+//extra
+Route::prefix('webhooks')->group(function () {
+    Route::post('/uber-eats', [ProviderWebhookController::class, 'uberEats']);
+    Route::post('/deliveroo', [ProviderWebhookController::class, 'deliveroo']);
+    Route::post('/just-eat',  [ProviderWebhookController::class, 'justEat']);
+});
+
+Route::post('printer', [PrinterController::class, 'print']);
+

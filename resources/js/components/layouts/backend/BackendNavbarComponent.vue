@@ -266,7 +266,7 @@ export default {
                                 });
                             }
                         }).catch((err) => {
-                            console.error('getToken failed:', err); 
+                            console.error('getToken failed:', err); //extra
                         });
                     }
                 });

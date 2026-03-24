@@ -16,6 +16,9 @@ use App\Http\Requests\PaginateRequest;
 use App\Http\Requests\ItemCategoryRequest;
 use App\Http\Resources\ItemCategoryResource;
 
+//extra
+use App\Http\Resources\ProductCategoryDepthTreeResource;
+
 class ItemCategoryController extends AdminController
 {
     private ItemCategoryService $itemCategoryService;
@@ -102,6 +105,25 @@ class ItemCategoryController extends AdminController
         try {
             Excel::import(new ItemCategoryImport($request->file('file')), $request->file('file'));
             return response('', 202);
+        } catch (Exception $exception) {
+            return response(['status' => false, 'message' => $exception->getMessage()], 422);
+        }
+    }
+
+    //extra
+    public function depthTree(): \Illuminate\Foundation\Application|\Illuminate\Http\Response|\Illuminate\Http\Resources\Json\AnonymousResourceCollection|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory
+    {
+        try {
+            return ProductCategoryDepthTreeResource::collection($this->itemCategoryService->depthTree());
+        } catch (Exception $exception) {
+            return response(['status' => false, 'message' => $exception->getMessage()], 422);
+        }
+    }
+
+    public function tree()
+    {
+        try {
+            return $this->itemCategoryService->tree()->toTree();
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }

@@ -35,7 +35,13 @@ class Order extends Model
         'source',
         'pos_payment_method',
         'pos_payment_note',
-        'pos_received_amount'
+        'pos_received_amount',
+
+        //extra online order
+        'provider_source',
+        'provider_order_id',
+        'provider_status',
+        'provider_payload',
     ];
 
     protected $casts = [
@@ -61,7 +67,13 @@ class Order extends Model
         'source'              => 'integer',
         'pos_payment_method'  => 'integer',
         'pos_payment_note'    => 'string',
-        'pos_received_amount' => 'decimal:6'
+        'pos_received_amount' => 'decimal:6',
+
+        //extra online order
+        'provider_source'   => 'string',
+        'provider_order_id' => 'string',
+        'provider_status'   => 'string',
+        'provider_payload'  => 'array',
     ];
 
     protected static function boot(): void

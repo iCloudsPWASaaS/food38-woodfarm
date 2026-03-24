@@ -150,4 +150,25 @@ class ItemCategoryService
             throw new Exception(QueryExceptionLibrary::message($exception), 422);
         }
     }
+
+    //extra
+    public function depthTree()
+    {
+        try {
+            return ItemCategory::tree()->depthFirst()->get();
+        } catch (Exception $exception) {
+            Log::info($exception->getMessage());
+            throw new Exception(QueryExceptionLibrary::message($exception), 422);
+        }
+    }
+
+    public function tree()
+    {
+        try {
+            return ItemCategory::active()->tree()->get();
+        } catch (Exception $exception) {
+            Log::info($exception->getMessage());
+            throw new Exception(QueryExceptionLibrary::message($exception), 422);
+        }
+    }
 }

@@ -47,26 +47,6 @@
                         </div>
 
                         <div class="col-12 sm:col-6 md:col-4 xl:col-3">
-                            <label class="db-field-title after:hidden">Source</label>
-                            <vue-select
-                                class="db-field-control f-b-custom-select"
-                                v-model="props.search.provider_source"
-                                :options="[
-                                    { id: 'uber_eats', name: 'Uber Eats' },
-                                    { id: 'deliveroo', name: 'Deliveroo' },
-                                    { id: 'just_eat',  name: 'Just Eat' },
-                                ]"
-                                label-by="name"
-                                value-by="id"
-                                :closeOnSelect="true"
-                                :searchable="true"
-                                :clearOnClose="true"
-                                placeholder="--"
-                                search-placeholder="--"
-                            />
-                        </div> <!-- extra -->
-
-                        <div class="col-12 sm:col-6 md:col-4 xl:col-3">
                             <label for="user_id" class="db-field-title">
                                 {{ $t("label.customer") }}
                             </label>
@@ -125,18 +105,6 @@
                             <td class="db-table-body-td">
                                 {{ order.order_serial_no }}
 
-                                <span
-                                    v-if="order.provider_source"
-                                    :class="{
-                                        'bg-black text-white':          order.provider_source === 'uber_eats',
-                                        'bg-[#00CCBC] text-white':      order.provider_source === 'deliveroo',
-                                        'bg-[#FF8000] text-white':      order.provider_source === 'just_eat',
-                                    }"
-                                    class="text-xs px-2 py-0.5 rounded-full font-medium"
-                                >
-                                    {{ { uber_eats: 'Uber Eats', deliveroo: 'Deliveroo', just_eat: 'Just Eat' }[order.provider_source] }}
-                                </span>
-
                             </td>
                             <td class="db-table-body-td">
                                 <span :class="statusClass(order.order_type)">
@@ -179,7 +147,7 @@
                                             <span class="text-sm capitalize text-white">{{ $t('button.accept') }}</span>
                                         </button>
 
-                                        <button type="button" @click="showOrder(order.id)"
+                                        <button type="button" @click="showOrder(order.id)" 
                                             class="flex items-center justify-center text-white gap-2 px-4 h-[38px] rounded shadow-db-card bg-[#2AC769]">
                                             <i class="lab lab-printer-line lab-font-size-16 text-white"></i> Print
                                         </button>
@@ -215,11 +183,14 @@
         </div>
     </div>
 
-    <!-- Receipt: offscreen for window.print() fallback -->
-    <div id="usb-receipt-target" style="position:fixed;left:-9999px;top:0;width:380px;background:#fff;">
-        <PosOrderReceiptListComponent :order="$store.getters['posOrder/show']" />
+    <!-- extra -->
+    <!-- Hidden receipt target for WebUSB printing -->
+    <div style="position:fixed; left:-9999px; top:0; z-index:-1;">
+        <div id="usb-receipt-target">
+            <PosOrderReceiptListComponent :order="$store.getters['posOrder/show']" />
+        </div>
     </div>
-
+    
 </template>
 <script>
 import LoadingComponent from "../components/LoadingComponent";
@@ -347,9 +318,6 @@ export default {
                     status: null,
                     from_date: "",
                     to_date: "",
-
-                    //extra
-                    provider_source: null,
                 }
             },
             ENV: ENV,
@@ -359,8 +327,11 @@ export default {
             order_status: null,
             delivery_boy: null,
 
-            //extra print
+            // WebUSB
             usbDevice: null,
+            printerConnected: false,
+            PRINTER_STORAGE_KEY: 'webusb_printer_device',
+            //PRINTER_NAME: 'Microsoft Print to PDF', // default fallback
         }
     },
     mounted() {
@@ -371,7 +342,7 @@ export default {
             status: statusEnum.ACTIVE
         });
 
-        this.initPrinter(); //extra print
+        this.autoConnectPrinter(); //extra print
     },
     computed: {
         orders: function () {
@@ -474,177 +445,153 @@ export default {
             });
         },
 
-        // ── Print: reads receipt_printer + kitchen_printer from localStorage ──
+        //extra
         showOrder: async function (orderId) {
             this.loading.isActive = true;
             try {
                 await this.$store.dispatch('posOrder/show', orderId);
                 this.loading.isActive = false;
                 await this.$nextTick();
-                const order = this.$store.getters['posOrder/show'];
-                await this.doPrint(order);
+
+                if (this.usbDevice) {
+                    await this.printViaUSB();
+                } else {
+                    const receiptEl = document.getElementById('receipt-content');
+                    if (!receiptEl) return;
+
+                    const win = window.open('', '_blank', 'width=420,height=700');
+                    win.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Receipt</title>
+                            <style>
+                                * { box-sizing: border-box; margin: 0; padding: 0; }
+                                body {
+                                    font-family: monospace;
+                                    background: white;
+                                    display: flex;
+                                    justify-content: center;
+                                    padding: 10px;
+                                }
+                                table { width: 100%; border-collapse: collapse; }
+                                @media print {
+                                    body { padding: 0; }
+                                    @page { margin: 5mm; size: 80mm auto; }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            ${receiptEl.outerHTML}
+                        </body>
+                        </html>
+                    `);
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => {
+                        win.print();
+                        win.close();
+                    }, 300);
+                }
             } catch (err) {
                 this.loading.isActive = false;
-                alertService.error('Could not load order.');
+                console.error(err);
             }
         },
 
-        doPrint: async function (order) {
-            let printer = null;
-            try { printer = JSON.parse(localStorage.getItem('receipt_printer')); } catch { /**/ }
-
-            if (!printer || !printer.type) {
-                this.printViaWindow();
-                return;
-            }
-
-            const strip = (str) => String(str || '').replace(/[£$€¥]/g, '').trim();
-
-            // ── ESC/POS + StarPRNT dual-compatible byte builder ──────────────────
-            class Receipt {
-                constructor(width = 32) {
-                    this._w   = width;
-                    this._buf = [];
-                }
-                // Append raw bytes
-                _push(...bytes) { this._buf.push(...bytes); return this; }
-                // Encode string → single bytes (printer is not UTF-8)
-                _str(s) { return Array.from(String(s), c => c.charCodeAt(0) & 0xFF); }
-
-                init()     { return this._push(0x1B, 0x40); }
-                boldOn()   { return this._push(0x1B, 0x45, 0x01); }
-                boldOff()  { return this._push(0x1B, 0x45, 0x00, 0x1B, 0x46); }
-                lf()       { return this._push(0x0A); }
-                rule()     { return this.text('-'.repeat(this._w)).lf(); }
-
-                text(s)    { return this._push(...this._str(s)); }
-                line(s)    { return this.text(s).lf(); }
-
-                center(s) {
-                    const str = String(s).substring(0, this._w);
-                    const pad = Math.max(0, Math.floor((this._w - str.length) / 2));
-                    return this.line(' '.repeat(pad) + str);
-                }
-
-                row(left, right) {
-                    const l = String(left);
-                    const r = String(right);
-                    const spaces = Math.max(1, this._w - l.length - r.length);
-                    return this.line(l + ' '.repeat(spaces) + r);
-                }
-
-                item(name, qty, price) {
-                    const q = String(qty);
-                    const p = String(price);
-                    const right = q + '  ' + p;
-                    const n = String(name).substring(0, this._w - right.length - 1);
-                    const spaces = this._w - n.length - right.length;
-                    return this.line(n + ' '.repeat(Math.max(1, spaces)) + right);
-                }
-
-                cut() {
-                    // Only ESC d 3 — StarPRNT cut. GS V prints garbage on this printer.
-                    return this._push(0x0A, 0x0A, 0x0A, 0x1B, 0x64, 0x03);
-                }
-
-                encode() {
-                    return new Uint8Array(this._buf);
-                }
-            }
-            // ─────────────────────────────────────────────────────────────────────
-
-            const r = new Receipt(32);
-
-            r.init()
-             .boldOn().center(order.branch?.name || 'RECEIPT').boldOff()
-             .center('Order: ' + order.order_serial_no)
-             .center(order.order_datetime)
-             .rule();
-
-            for (const i of (order.order_items || [])) {
-                r.boldOn().item(i.item_name || '', 'x' + i.quantity, strip(i.total_currency_price)).boldOff();
-            }
-
-            r.rule()
-             .row('Subtotal:', strip(order.subtotal_currency_price))
-             .row('Discount:', strip(order.discount_currency_price))
-             .row('Delivery:', strip(order.delivery_charge_currency_price))
-             .rule()
-             .boldOn()
-             .row('TOTAL:', strip(order.total_currency_price))
-             .boldOff()
-             .rule()
-             .center('Thank you!')
-             .cut();
-
-            const bytes = r.encode();
-
-            if (printer.type === 'network' && printer.ip) {
-                await this.printViaNetwork(printer.ip, printer.port || 9100, bytes);
-            } else if ((printer.type === 'usb' || printer.type === 'bluetooth') && printer.vendorId) {
-                await this.printViaUSB(printer, bytes);
-            }
-        },
-        printViaWindow: function () {
-            window.print();
-        },
-
-        initPrinter: async function () {
+        // Auto connect on mount - uses localStorage or default printer name
+        autoConnectPrinter: async function () {
             try {
-                const printer = JSON.parse(localStorage.getItem('receipt_printer'));
-                if (!printer || (printer.type !== 'usb' && printer.type !== 'bluetooth')) return;
+                const saved = JSON.parse(localStorage.getItem(this.PRINTER_STORAGE_KEY));
+
+                // No saved device = use default (window.print), nothing to connect
+                if (!saved) {
+                    console.log('No saved printer, will use default print dialog');
+                    return;
+                }
+
+                // Saved device = try to connect via WebUSB
                 const devices = await navigator.usb.getDevices();
-                const device  = devices.find(d => d.vendorId === printer.vendorId && d.productId === printer.productId);
+                const device = devices.find(d =>
+                    d.vendorId === saved.vendorId && d.productId === saved.productId
+                );
+
                 if (device) {
                     await device.open();
-                    if (device.configuration === null) await device.selectConfiguration(1);
+                    await device.selectConfiguration(1);
                     await device.claimInterface(0);
                     this.usbDevice = device;
+                    this.printerConnected = true;
+                    console.log('Connected to:', device.productName);
                 }
             } catch (err) {
-                console.warn('Printer init:', err.message);
+                console.error('Auto-connect failed:', err);
             }
         },
 
-        printViaUSB: async function (printer, bytes) {
+        // Capture receipt div and send to USB printer
+        printViaUSB: async function () {
             try {
-                let device = this.usbDevice;
-                if (!device) {
-                    const devices = await navigator.usb.getDevices();
-                    device = devices.find(d => d.vendorId === printer.vendorId && d.productId === printer.productId);
+                const receiptEl = document.getElementById('usb-receipt-target');
+                if (!receiptEl) {
+                    alertService.error('Receipt element not found');
+                    return;
                 }
-                if (!device) { alertService.error('USB printer not found. Reconnect in Settings.'); return; }
-                if (!device.opened) {
-                    await device.open();
-                    if (device.configuration === null) await device.selectConfiguration(1);
-                    await device.claimInterface(0);
-                }
-                const endpoint = device.configuration.interfaces[0].alternate.endpoints.find(e => e.direction === 'out');
-                await device.transferOut(endpoint.endpointNumber, bytes);
-                alertService.success('Printed!');
-            } catch (err) {
-                alertService.error('USB print failed: ' + err.message);
-            }
-        },
 
-        printViaNetwork: async function (ip, port, bytes) {
-            try {
-                const res = await fetch('/api/printer', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                    },
-                    body: JSON.stringify({ ip, port, bytes: Array.from(bytes) }),
+                const html2canvas = (await import('html2canvas')).default;
+                const canvas = await html2canvas(receiptEl, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true
                 });
-                const json = await res.json();
-                if (res.ok) alertService.success('Printed!');
-                else        alertService.error('Print failed: ' + (json.message || 'Error'));
+
+                const ctx = canvas.getContext('2d');
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                const escposData = this.convertImageToESCPOS(imageData);
+
+                const encoder = new TextEncoder();
+                const init = encoder.encode('\x1B\x40');      // Initialize printer
+                const cut = encoder.encode('\x1D\x56\x00');  // Cut paper
+
+                await this.usbDevice.transferOut(1, init);
+                await this.usbDevice.transferOut(1, escposData);
+                await this.usbDevice.transferOut(1, cut);
+
+                alertService.success('Receipt printed!');
             } catch (err) {
-                alertService.error('Network print failed: ' + err.message);
+                console.error('Printing failed:', err);
+                alertService.error('Printing failed: ' + err.message);
             }
         },
 
+        // Convert canvas pixels to ESC/POS byte format
+        convertImageToESCPOS: function (imageData) {
+            const { width, height, data } = imageData;
+            const bytes = [];
+
+            for (let y = 0; y < height; y += 8) {
+                bytes.push(0x1B, 0x2A, 0x21, width & 0xFF, (width >> 8) & 0xFF);
+
+                for (let x = 0; x < width; x++) {
+                    let byte = 0;
+                    for (let bit = 0; bit < 8; bit++) {
+                        const pixelY = y + bit;
+                        if (pixelY >= height) continue;
+                        const offset = (pixelY * width + x) * 4;
+                        const r = data[offset];
+                        const g = data[offset + 1];
+                        const b = data[offset + 2];
+                        const avg = (r + g + b) / 3;
+                        if (avg < 128) byte |= 1 << (7 - bit);
+                    }
+                    bytes.push(byte);
+                }
+                bytes.push(0x0A);
+            }
+
+            return new Uint8Array(bytes);
+        },
 
         changeStatus: function (status, orderId) {
             appService.acceptOrder().then((res) => {
@@ -681,27 +628,5 @@ export default {
     .hidden-print {
         display: none !important;
     }
-}
-
-.receipt-print-area {
-    display: none;
-}
-
-@media print {
-    .receipt-print-area {
-        display: block !important;
-    }
-}
-</style>
-<style>
-@media print {
-    body * { visibility: hidden !important; }
-    #usb-receipt-target, #usb-receipt-target * { visibility: visible !important; }
-    #usb-receipt-target {
-        position: fixed !important;
-        top: 0; left: 0;
-        width: 100%;
-    }
-    @page { size: 80mm auto; margin: 4mm; }
 }
 </style>

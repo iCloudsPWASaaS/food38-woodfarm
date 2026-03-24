@@ -8,9 +8,13 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
+//extra
+use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
+
 class ItemCategory extends Model implements HasMedia
 {
     use InteractsWithMedia;
+    use HasRecursiveRelationships; //extra
 
     protected $table = "item_categories";
     protected $fillable = ['name', 'slug', 'description', 'status', 'sort', 'parent_id']; //extra
@@ -63,5 +67,10 @@ class ItemCategory extends Model implements HasMedia
     public function subCategories(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(ItemCategory::class, 'parent_id')->where('status', Status::ACTIVE)->orderBy('sort');
+    }
+
+    public function scopeActive($query)  //extra
+    {
+        return $query->where('status', Status::ACTIVE);
     }
 }

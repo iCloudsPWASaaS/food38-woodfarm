@@ -23,6 +23,11 @@
                 <i class="lab lab-kiosk text-sm"></i>
                 Printer & Caller ID
             </router-link> 
+
+            <router-link :to="{ name: 'admin.settings.merchant' }" class="db-tab-btn">
+                <i class="lab lab-otp text-sm"></i>
+                Merchant Providers
+            </router-link>
             
             <router-link :to="{ name: 'admin.settings.kioskMachines' }" class="db-tab-btn">
                 <i class="lab lab-kiosk text-sm"></i>

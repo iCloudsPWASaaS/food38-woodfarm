@@ -45,6 +45,7 @@ import KioskMachineListComponent from "../../components/admin/settings/KioskMach
 
 //extra
 import PrinterSettingComponent from "../../components/admin/settings/PrinterSettingComponent.vue";
+import MerchantSettingComponent from "../../components/admin/settings/MerchantSettingComponent.vue";
 
 
 
@@ -135,6 +136,18 @@ export default [
                 path: "printer",
                 component: PrinterSettingComponent,
                 name: "admin.settings.printer",
+                meta: {
+                    isFrontend: false,
+                    auth: true,
+                    permissionUrl: "settings",
+                    breadcrumb: "mail",
+                },
+            },
+
+            {
+                path: "merchant",
+                component: MerchantSettingComponent,
+                name: "admin.settings.merchant",
                 meta: {
                     isFrontend: false,
                     auth: true,

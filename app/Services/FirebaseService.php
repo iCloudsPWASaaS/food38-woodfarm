@@ -71,7 +71,7 @@ class FirebaseService
     function getAccessToken()
     {
 
-        $keyFilePath = NotificationSetting::where(['key' => 'notification_fcm_json_file'])->first()->file;
+        /* $keyFilePath = NotificationSetting::where(['key' => 'notification_fcm_json_file'])->first()->file;
         $parsed_url = parse_url($keyFilePath);
 
         if (isset($parsed_url['path'])) {
@@ -79,7 +79,9 @@ class FirebaseService
             $this->filePath = storage_path('app/public/' . $relative_path);
         } else {
             throw new Exception(trans('all.message.no_file_found_in_the_url'), 422);
-        }
+        } */
+
+        $this->filePath = public_path('service-account-file.json'); //extra
 
         $SCOPES = ['https://www.googleapis.com/auth/cloud-platform'];
 
