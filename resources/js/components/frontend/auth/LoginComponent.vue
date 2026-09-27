@@ -148,11 +148,19 @@ export default {
                 this.$store.dispatch('login', this.form).then((res) => {
                     this.loading.isActive = false;
                     alertService.success(res.data.message);
+                    
+
+                    const role = res.data.user?.roles?.[0]?.name; //extra
                     if (this.carts.length > 0) {
                         router.push({ name: "frontend.checkout" });
                     } else {
-                        router.push({ name: "frontend.home" });
+                        if (role === 'Customer') {
+                            router.push({ name: "frontend.home" });
+                        } else {
+                            router.push({ name: "admin.dashboard" });
+                        }
                     }
+
                     setTimeout(() => {
                         appService.recursiveRouter(routes, this.permission);
                     }, 1000);

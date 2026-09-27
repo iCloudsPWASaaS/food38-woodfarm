@@ -33,6 +33,12 @@ class UserResource extends JsonResource
             'create_date'      => AppLibrary::date($this->created_at),
             'update_date'      => AppLibrary::date($this->updated_at),
 
+            //extra
+            "roles"            => $this->roles->map(fn($role) => [
+                'id'   => $role->id,
+                'name' => $role->name,
+            ]),
+
         ];
     }
 }

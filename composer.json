@@ -36,6 +36,7 @@
         "nyawach/laravel-pesapal": "^1.1",
         "obydul/laraskrill": "*",
         "pragmarx/countries": "0.8.2",
+        "pusher/pusher-php-server": "^7.2",
         "razorpay/razorpay": "^2.8",
         "santigraviano/laravel-mercadopago": "^1.0",
         "simplesoftwareio/simple-qrcode": "^4.2",

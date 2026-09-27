@@ -11,7 +11,7 @@
                         <i class="lab lab-information font-fill-paragraph transition lab-font-size-16"></i>
                     </button>
                 </div>
-                <p class="product-card-list-describe char-limit">
+                <p class="product-card-list-describe char-limit text-white">
                     {{ textShortener(item.description, 65) }}
                 </p>
                 <div class="product-card-list-footer-group">
@@ -23,10 +23,16 @@
                             {{ item.offer.length > 0 ? item.offer[0].currency_price : item.currency_price }}
                         </h4>
                     </div>
-                    <button @click.prevent="variationModalShow(item)" data-modal="#item-variation-modal"
+                    <!-- <button @click.prevent="variationModalShow(item)" data-modal="#item-variation-modal"
                         class="product-card-list-cart-btn add-btn">
                         <i class="lab lab-bag-2 font-fill-primary transition lab-font-size-14"></i>
                         <span class="text-xs text-primary transition">{{ $t('button.add') }}</span>
+                    </button> --> <!-- extra -->
+                    <button @click.prevent="variationModalShow(item)" data-modal="#item-variation-modal"
+                        class="product-card-list-cart-btn add-btn px-6 py-3 text-base">
+                        
+                        <i class="lab lab-bag-2 font-fill-primary transition text-xl"></i>
+                        <span class="text-base text-primary transition">{{ $t('button.add') }}</span>
                     </button>
                 </div>
             </div>

@@ -27,3 +27,8 @@ _ide_helper_models.php
 public/file/service-account-file.json
 database/seeders/PaymentGatewayDataTableSeeder.php
 public/storage/125/service-account-file.json
+public/service-account-file.json
+public/*/service-account-file.json
+* copy.vue
+error_log
+public/error_log

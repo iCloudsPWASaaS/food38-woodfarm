@@ -37,6 +37,9 @@ class Order extends Model
         'pos_payment_note',
         'pos_received_amount',
 
+        //extra
+        'pos_payment_splits',
+
         //extra online order
         'provider_source',
         'provider_order_id',
@@ -68,6 +71,9 @@ class Order extends Model
         'pos_payment_method'  => 'integer',
         'pos_payment_note'    => 'string',
         'pos_received_amount' => 'decimal:6',
+
+        //extra
+        'pos_payment_splits'  => 'array', 
 
         //extra online order
         'provider_source'   => 'string',

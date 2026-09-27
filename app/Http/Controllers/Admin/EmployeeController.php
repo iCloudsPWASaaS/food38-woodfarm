@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use Exception;
 use App\Models\User;
+use App\Models\EmployeeClock;
 use App\Services\OrderService;
 use App\Exports\EmployeeExport;
 use App\Services\EmployeeService;
@@ -100,6 +101,42 @@ class EmployeeController extends AdminController
     {
         try {
             return new EmployeeResource($this->employeeService->changeImage($request, $employee));
+        } catch (Exception $exception) {
+            return response(['status' => false, 'message' => $exception->getMessage()], 422);
+        }
+    }
+
+    public function employeeClock($id): \Illuminate\Http\Response | \Illuminate\Contracts\Foundation\Application | \Illuminate\Contracts\Routing\ResponseFactory
+    {
+        try {
+            $employee = User::findOrFail($id);
+            $today = now()->format('Y-m-d');
+            $now = now()->format('H:i:s');
+
+            $existingClock = EmployeeClock::where('employee_id', $id)
+                ->where('date', $today)
+                ->whereNull('clock_out')
+                ->first();
+
+            if ($existingClock) {
+                $existingClock->update(['clock_out' => $now]);
+                return response([
+                    'status' => true,
+                    'message' => 'Clocked out successfully',
+                    'data' => $existingClock
+                ]);
+            } else {
+                $clock = EmployeeClock::create([
+                    'employee_id' => $id,
+                    'date' => $today,
+                    'clock_in' => $now,
+                ]);
+                return response([
+                    'status' => true,
+                    'message' => 'Clocked in successfully',
+                    'data' => $clock
+                ]);
+            }
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }

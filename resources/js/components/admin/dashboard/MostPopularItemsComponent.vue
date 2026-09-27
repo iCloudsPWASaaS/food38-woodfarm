@@ -3,7 +3,7 @@
     <div class="col-12 xl:col-6">
         <div class="db-card">
             <div class="db-card-header">
-                <div class="db-card-title">{{ $t('label.most_popular_items') }}</div>
+                <div class="db-card-title text-white">{{ $t('label.most_popular_items') }}</div>
             </div>
             <div class="db-card-body">
                 <ul class="grid grid-cols-1 sm:grid-cols-2 gap-[18px]">

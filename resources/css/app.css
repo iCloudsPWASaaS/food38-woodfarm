@@ -32,7 +32,8 @@
     h5,
     h6 { @apply text-heading; font-style: initial; }
 
-    body { @apply text-base font-normal font-rubik scroll-smooth text-paragraph bg-white }
+    /* body { @apply text-base font-normal font-rubik scroll-smooth text-paragraph bg-white } */ /* extra */
+    body { @apply text-base font-normal font-rubik scroll-smooth text-paragraph bg-black }
 }
 
 @layer components {
@@ -192,7 +193,24 @@
     .product-card-grid-cart-btn { @apply flex items-center gap-1.5 rounded-3xl capitalize text-sm font-medium h-6 px-2 shadow-md transition bg-white hover:bg-primary }
 
     /* PRODUCT CARD LIST */
-    .product-card-list { @apply relative flex items-center rounded-lg border transition border-[#EFF0F6] bg-white hover:shadow-xl }
+    /* .product-card-list { @apply relative flex items-center rounded-lg border transition border-[#EFF0F6] bg-white hover:shadow-xl } */
+    .product-card-list {
+        --tw-border-opacity: 1;
+        --tw-bg-opacity: 1;
+        align-items: center;
+        background-color: #5c6253;
+        /* border-color:rgb(239 240 246/var(--tw-border-opacity,1)); */
+        border-radius: .5rem;
+        /* border-width:1px; */
+        display: flex;
+        position: relative;
+        transition-duration: .3s;
+        transition-property: color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;
+        transition-property: all;
+        transition-timing-function: cubic-bezier(.4,0,.2,1);
+        transition-timing-function: linear
+    } /* extra */
+
     .product-card-list-image { @apply flex-shrink-0 w-28 h-full object-cover ltr:rounded-l-lg rtl:rounded-r-lg }
     .product-card-list-badge-group { @apply absolute top-3 left-3 rotate-[-35deg] }
     .product-card-list-badge-image { @apply w-12 h-12 }
@@ -482,8 +500,8 @@
 
     .pos-group .active { @apply bg-primary-light border-primary }
 
-    /* FOOTER */
-    .footer-part { @apply bg-primary }
+    /* FOOTER */ /* extra */
+    .footer-part { @apply bg-[#f5cb42] }
 
     /* INSTALLER */
     .installer-track { @apply flex items-center justify-between w-[109%] sm:w-[111%] }

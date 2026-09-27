@@ -47,4 +47,13 @@ return [
         'hashKey'     => "",
     ],
 
+    'uber' => [
+        'client_id'      => env('UBER_CLIENT_ID'),
+        'client_secret'  => env('UBER_CLIENT_SECRET'),
+        'webhook_secret' => env('UBER_WEBHOOK_SECRET'),
+        'environment' => env('UBER_ENVIRONMENT', 'sandbox'), // sandbox or production
+        'default_branch_id' => env('UBER_DEFAULT_BRANCH_ID', 1),
+        'default_user_id' => env('UBER_DEFAULT_USER_ID', 1),
+    ],
+
 ];

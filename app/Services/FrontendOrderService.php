@@ -30,6 +30,9 @@ use App\Libraries\QueryExceptionLibrary;
 use Smartisan\Settings\Facades\Settings;
 use App\Http\Requests\OrderStatusRequest;
 
+//extra
+use App\Events\NewNotification;
+
 class FrontendOrderService
 {
 
@@ -150,6 +153,7 @@ class FrontendOrderService
 
                 $this->frontendOrder->order_serial_no = date('dmy') . $this->frontendOrder->id;
                 $this->frontendOrder->total_tax = $totalTax;
+                $this->frontendOrder->provider_source = "online"; //extra
                 $this->frontendOrder->save();
 
                 if ($request->address_id) {
@@ -175,6 +179,14 @@ class FrontendOrderService
                         'discount'  => $request->discount
                     ]);
                 }
+
+                if ($this->frontendOrder->provider_source === "online") { //extra
+                    $formattedSource = ucwords(str_replace('_', ' ', $this->frontendOrder->provider_source));
+                    broadcast(new NewNotification(
+                        "New {$formattedSource} order #{$this->frontendOrder->order_serial_no} has been placed."
+                    ));
+                }
+
                 SendOrderMail::dispatch(['order_id' => $this->frontendOrder->id, 'status' => OrderStatus::PENDING]);
                 SendOrderSms::dispatch(['order_id' => $this->frontendOrder->id, 'status' => OrderStatus::PENDING]);
                 SendOrderPush::dispatch(['order_id' => $this->frontendOrder->id, 'status' => OrderStatus::PENDING]);
@@ -240,3 +252,4 @@ class FrontendOrderService
         }
     }
 }
+

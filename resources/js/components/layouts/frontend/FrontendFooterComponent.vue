@@ -1,24 +1,24 @@
 <template>
     <LoadingComponent :props="loading" />
-    <footer class="footer-part pt-12 mb-14 lg:mb-0">
+    <!-- <footer class="footer-part pt-12 mb-14 lg:mb-0">
         <div class="container">
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-6">
                 <div>
                     <router-link :to="{ name: 'frontend.home' }">
                         <img class="mb-8 w-36" :src="setting.theme_footer_logo" alt="logo">
                     </router-link>
-                    <p class="text-xs mb-3 text-white">{{ $t('label.subscribe_short_text') }}</p>
+                    <p class="text-xs mb-3 text-black">{{ $t('label.subscribe_short_text') }}</p>
                     <form @submit.prevent="saveSubscription"
                         class="flex items-center rounded-lg sm:max-w-xs w-full h-12 p-2 mb-8 bg-white">
                         <input type="email" :placeholder="$t('label.your_email_address')"
                             v-model="subscriptionProps.post.email" class="w-full h-full ltr:pl-2 rtl:pr-2">
                         <button type="submit"
-                            class="capitalize text-xs font-medium rounded-md flex-shrink-0 p-2.5 text-white bg-primary">
+                            class="capitalize text-xs font-medium rounded-md flex-shrink-0 p-2.5 text-black bg-primary">
                             {{ $t('button.subscribe') }}
                         </button>
                     </form>
                     <h3 v-if="setting.social_media_facebook || setting.social_media_twitter || setting.social_media_instagram || setting.social_media_youtube"
-                        class="text-xs capitalize mb-4 text-white">{{ $t('label.follow_us_on') }}</h3>
+                        class="text-xs capitalize mb-4 text-black">{{ $t('label.follow_us_on') }}</h3>
                     <nav v-if="setting.social_media_facebook || setting.social_media_twitter || setting.social_media_instagram || setting.social_media_youtube"
                         class="flex items-center gap-5">
                         <a v-if="setting.social_media_facebook" target="_blank" :href="setting.social_media_facebook"
@@ -33,9 +33,9 @@
                 </div>
                 <div>
                     <div class="sm:w-fit sm:mx-auto">
-                        <h3 class="capitalize text-lg font-semibold mb-6 text-white">{{ $t('label.useful_links') }}</h3>
+                        <h3 class="capitalize text-lg font-semibold mb-6 text-black">{{ $t('label.useful_links') }}</h3>
                         <nav v-if="pages.length > 0" class="flex flex-col items-start gap-3">
-                            <router-link v-for="page in pages" class="capitalize text-white hover:underline"
+                            <router-link v-for="page in pages" class="capitalize text-black hover:underline"
                                 :to="{ name: 'frontend.page', params: { slug: page.slug } }">
                                 {{ page.title }}
                             </router-link>
@@ -44,7 +44,7 @@
                 </div>
                 <div>
                     <h3 v-if="setting.site_android_app_link || setting.site_ios_app_link"
-                        class="capitalize text-lg font-semibold mb-3 text-white">
+                        class="capitalize text-lg font-semibold mb-3 text-black">
                         {{ $t('label.download_our_apps') }}
                     </h3>
                     <nav class="flex items-center gap-3 mb-7 w-full max-w-[265px]">
@@ -56,11 +56,11 @@
                         </a>
                     </nav>
                     <ul class="flex flex-col gap-5">
-                        <li class="flex items-center gap-2.5 text-white">
+                        <li class="flex items-center gap-2.5 text-black">
                             <i class="lab lab-sms-tracking lab-font-size-24"></i>
                             <span class="text-lg">{{ setting.company_email }}</span>
                         </li>
-                        <li class="flex items-center gap-2.5 text-white">
+                        <li class="flex items-center gap-2.5 text-black">
                             <i class="lab lab-call-center lab-font-size-24"></i>
                             <span class="text-lg font-medium">{{ setting.company_phone }}</span>
                         </li>
@@ -69,7 +69,32 @@
             </div>
         </div>
         <div class="py-8 mt-8 border-t border-[#ff3388]">
-            <p class="text-sm text-center text-white">{{ setting.site_copyright }}</p>
+            <p class="text-sm text-center text-black">{{ setting.site_copyright }}</p>
+        </div>
+    </footer> -->
+    <footer class="footer-part pt-5">
+        <div class="container">
+            <div class="flex items-center justify-between">
+                <!-- Logo - left end -->
+                <router-link :to="{ name: 'frontend.home' }">
+                    <img class="w-36" :src="setting.theme_footer_logo" alt="logo">
+                </router-link>
+ 
+                <!-- Email + Phone - right end -->
+                <ul class="flex items-center gap-6 list-none">
+                    <li class="flex items-center gap-2.5 text-black">
+                        <i class="lab lab-sms-tracking lab-font-size-24"></i>
+                        <span class="text-lg">{{ setting.company_email }}</span>
+                    </li>
+                    <li class="flex items-center gap-2.5 text-black">
+                        <i class="lab lab-call-center lab-font-size-24"></i>
+                        <span class="text-lg font-medium">{{ setting.company_phone }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="py-2 mt-2">
+            <p class="text-sm text-center text-black">{{ setting.site_copyright }}</p>
         </div>
     </footer>
 </template>

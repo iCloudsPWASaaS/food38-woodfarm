@@ -1,7 +1,11 @@
 php artisan media-library:regenerate
 php artisan media-library:regenerate --ids=73
+php artisan media-library:regenerate --only-missing
 just need to remebmer for image - it's id will be media_id and then media table id will be th folder name in which php artisan media-library:regenerate
 will generate conversions
+
+php artisan queue:work --verbose
+
 
 --------------------
 Step 1
@@ -397,6 +401,10 @@ source and order_type
 C:\Windows\system32>docker exec -it food38-app find /app/storage -name "service-account-file.json"
 /app/storage/app/public/125/service-account-file.json
 ------------------
+------------------
+
+DB -
+orders -> pos_received_amount
 
 notification files -
 F:\MyProjects2025\foodking32\main38\app\Http\Controllers\Admin\NotificationController.php
@@ -410,3 +418,104 @@ POS & Orders
 Communications
 Reports -> Credit Balance Report
 Settings -> License
+
+
+------------------------
+media delete -
+php artisan tinker
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+Media::where('model_type', 'App\Models\Item')->each(fn($m) => $m->delete());
+
+media for items -
+If it says sync, that's the problem. Change it to database or redis:
+bash# in .env
+QUEUE_CONNECTION=database
+Then make sure the jobs table exists:
+php artisan queue:table
+php artisan migrate
+Then re-run:
+php artisan optimize:clear
+php artisan items:download-images
+php artisan queue:work --queue=images --tries=3 --sleep=1 --stop-when-empty &
+php artisan queue:work --queue=images --tries=3 --sleep=1 --stop-when-empty &
+php artisan queue:work --queue=images --tries=3 --sleep=1 --stop-when-empty &
+php artisan queue:work --queue=images --tries=3 --sleep=1 --stop-when-empty &
+php artisan queue:work --queue=images --tries=3 --sleep=1 --stop-when-empty &
+
+php artisan optimize:clear
+php artisan categories:download-images
+php artisan queue:work --queue=images --tries=3 --sleep=1 --stop-when-empty &
+php artisan queue:work --queue=images --tries=3 --sleep=1 --stop-when-empty &
+php artisan queue:work --queue=images --tries=3 --sleep=1 --stop-when-empty &
+php artisan queue:work --queue=images --tries=3 --sleep=1 --stop-when-empty &
+php artisan queue:work --queue=images --tries=3 --sleep=1 --stop-when-empty &
+
+for uber receive order -
+uver secrents in .env now 
+and F:\MyProjects2025\foodking32\main38\app\Http\Controllers\WebhookController.php has been created
+waiting for create prod app and then signature can be enabled -
+for testing from postman ->
+const secret = 'a3f8c2d1e4b7a9f0c3d6e8b1a4f7c2d5e8b3a6f9c2d5e8b1a4f7c2d5e8b3a6f9';
+const body = pm.request.body.raw;
+const signature = CryptoJS.HmacSHA256(body, secret).toString();
+pm.request.headers.upsert({
+    key: 'X-Uber-Signature',
+    value: signature
+});
+and json body ->
+{
+    "event_id": "test-12345",
+    "event_type": "orders.notification",
+    "timestamp": 1704355200000,
+    "data": {
+        "order": {
+            "id": "sandbox-order-12345",
+            "display_id": "ORD-12345",
+            "status": "received",
+            "store_id": "store_123",
+            "eater": {
+                "name": "Test Customer",
+                "phone": "+1234567890",
+                "email": "test@example.com"
+            },
+            "delivery_address": {
+                "street_address": "123 Test Street",
+                "city": "San Francisco",
+                "state": "CA",
+                "postal_code": "94105",
+                "latitude": 37.7749,
+                "longitude": -122.4194
+            },
+            "cart": {
+                "items": [
+                    {
+                        "id": "item_1",
+                        "name": "Cheeseburger",
+                        "quantity": 2,
+                        "price": 1299,
+                        "total_price": 2598
+                    }
+                ]
+            },
+            "payment": {
+                "subtotal": 1299,
+                "delivery_fee": 299,
+                "tax": 130,
+                "total_charge": 1728
+            }
+        }
+    }
+}
+------------------------------
+F:\MyProjects2025\foodking32\main38\resources\js\components\frontend\auth\LoginComponent.vue ->
+if (this.carts.length > 0) {
+    router.push({ name: "frontend.checkout" });
+} else {
+    router.push({ name: "frontend.home" });
+}
+
+
+
+for admin and guest redirection -
+F:\MyProjects2025\foodking32\main38\app\Http\Resources\UserResource.php
+F:\MyProjects2025\foodking32\main38\resources\js\components\frontend\auth\LoginComponent.vue

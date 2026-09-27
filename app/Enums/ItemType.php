@@ -5,4 +5,5 @@ interface ItemType
 {
     const VEG     = 5;
     const NON_VEG = 10;
+    const DRINK   = 20;
 }

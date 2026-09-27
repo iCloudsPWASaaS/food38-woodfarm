@@ -51,6 +51,15 @@ class OnlineOrderController extends AdminController
         }
     }
 
+    public function indexAll(PaginateRequest $request): \Illuminate\Http\Response | \Illuminate\Http\Resources\Json\AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | \Illuminate\Contracts\Routing\ResponseFactory
+    {
+        try {
+            return SimpleOrderResource::collection($this->orderService->listall($request));
+        } catch (Exception $exception) {
+            return response(['status' => false, 'message' => $exception->getMessage()], 422);
+        }
+    } //extra
+
     public function show(Order $order): \Illuminate\Http\Response | OrderDetailsResource | \Illuminate\Contracts\Foundation\Application | \Illuminate\Contracts\Routing\ResponseFactory
     {
         try {
@@ -116,5 +125,28 @@ class OnlineOrderController extends AdminController
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }
+    }
+
+    //extra
+    public function acceptOrder(Order $order)
+    {
+        $order->update(['status' => 4]); // adjust field/value to match your schema
+
+        return response()->json([
+            'result'  => 'success',
+            'message' => 'Order accepted successfully',
+            //'data'    => new OnlineOrderResource($order),
+        ]);
+    }
+
+    public function declineOrder(Order $order)
+    {
+        $order->update(['status' => 16]); // adjust field/value to match your schema
+
+        return response()->json([
+            'result'  => 'success',
+            'message' => 'Order declined successfully',
+            //'data'    => new OnlineOrderResource($order),
+        ]);
     }
 }

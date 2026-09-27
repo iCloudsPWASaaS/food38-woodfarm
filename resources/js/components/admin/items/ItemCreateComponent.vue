@@ -94,6 +94,14 @@
                                 </div>
                                 <label for="nonVeg" class="db-field-label">{{ $t('label.non_veg') }}</label>
                             </div>
+                            <div class="db-field-radio">
+                                <div class="custom-radio">
+                                    <input type="radio" class="custom-radio-field" v-model="props.form.item_type"
+                                        id="drink" :value="enums.itemTypeEnum.DRINK">
+                                    <span class="custom-radio-span"></span>
+                                </div>
+                                <label for="drink" class="db-field-label">Drink</label>
+                            </div>
                         </div>
                     </div>
 

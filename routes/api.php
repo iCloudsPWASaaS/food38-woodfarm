@@ -107,7 +107,12 @@ use App\Http\Controllers\Frontend\DeliveryBoyOrderController as FrontendDelivery
 use App\Http\Controllers\Admin\MerchantController;
 use App\Http\Controllers\ProviderWebhookController;
 use App\Http\Controllers\PrinterController;
+
+use App\Http\Controllers\UberWebhookController;
  
+//extra dojo
+use App\Http\Controllers\Mock\DojoMockController;
+use App\Services\DojoService;
 
 
 
@@ -482,6 +487,9 @@ Route::prefix('admin')->name('admin.')->middleware(['installed', 'apiKey', 'loca
         Route::post('/address/{employee}', [EmployeeAddressController::class, 'store']);
         Route::match(['put', 'patch'], '/address/{employee}/{address}', [EmployeeAddressController::class, 'update']);
         Route::delete('/address/{employee}/{address}', [EmployeeAddressController::class, 'destroy']);
+
+        //extra
+        Route::post('/clock/{id}', [EmployeeController::class, 'employeeClock']);
     });
 
     Route::prefix('delivery-boy')->name('delivery-boy.')->group(function () {
@@ -588,6 +596,15 @@ Route::prefix('admin')->name('admin.')->middleware(['installed', 'apiKey', 'loca
         Route::post('/change-status/{order}', [OnlineOrderController::class, 'changeStatus']);
         Route::post('/change-payment-status/{order}', [OnlineOrderController::class, 'changePaymentStatus']);
         Route::post('/select-delivery-boy/{order}', [OnlineOrderController::class, 'selectDeliveryBoy']);
+    });
+
+    Route::prefix('online')->group(function () { //extra
+        Route::post('/accept/{order}', [OnlineOrderController::class, 'acceptOrder']);   // <-- add
+        Route::post('/decline/{order}', [OnlineOrderController::class, 'declineOrder']); // <-- add
+    });
+
+    Route::prefix('online-order-all')->name('onlineOrderAll.')->group(function () { //extra
+        Route::get('/', [OnlineOrderController::class, 'indexAll']);
     });
 
     Route::prefix('table-order')->name('tableOrder.')->group(function () {
@@ -715,6 +732,46 @@ Route::prefix('admin')->name('admin.')->middleware(['installed', 'apiKey', 'loca
     Route::prefix('oss-order')->name('ossOrder.')->group(function () {
         Route::get('/', [OrderStatusScreenController::class, 'index']);
         Route::get('/popular-items', [OrderStatusScreenController::class, 'mostPopularItems']);
+    });
+});
+
+//extra dojo
+Route::prefix('dojo')->name('dojo.')->group(function () {
+
+    // Step 1 — initiate payment, terminal wakes up
+    Route::post('/pac/terminals/{terminalId}/transactions', function (\Illuminate\Http\Request $request, string $terminalId) {
+        $request->validate([
+            'amount'    => ['required', 'numeric', 'min:0.01'],
+            'reference' => ['nullable', 'string'],
+        ]);
+
+        $dojoService = app(\App\Services\DojoService::class);
+        return response()->json($dojoService->createTerminalTransaction(
+            (float) $request->input('amount'),
+            $request->input('reference'),
+            $terminalId,
+        ));
+    });
+
+    // Step 2 — poll for result after customer taps card
+    Route::get('/pac/terminals/{terminalId}/transactions/{transactionId}', function (string $terminalId, string $transactionId) {
+        $dojoService = app(\App\Services\DojoService::class);
+        return response()->json($dojoService->getTransaction($terminalId, $transactionId));
+    });
+
+    // Optional — cancel an in-progress payment
+    Route::post('/pac/terminals/{terminalId}/transactions/{transactionId}/cancel', function (string $terminalId, string $transactionId) {
+        $dojoService = app(\App\Services\DojoService::class);
+        return response()->json($dojoService->cancelTransaction($terminalId, $transactionId));
+    });
+
+});
+
+//extra dojo
+Route::prefix('mock')->name('mock.')->group(function () {
+    Route::prefix('pac')->name('pac.')->group(function () {
+        Route::post('/terminals/{terminalId}/transactions', [DojoMockController::class, 'create']);
+        Route::get('/terminals/{terminalId}/transactions/{transactionId}', [DojoMockController::class, 'show']);
     });
 });
 
@@ -848,5 +905,25 @@ Route::prefix('webhooks')->group(function () {
     Route::post('/just-eat',  [ProviderWebhookController::class, 'justEat']);
 });
 
+
+// Uber Webhook (receives orders)
+Route::post('/webhooks/uber', [UberWebhookController::class, 'uber']);
+// Manual accept/decline endpoints
+Route::prefix('uber')->group(function () {
+    // Accept an order
+    Route::post('/orders/{orderId}/accept', [UberWebhookController::class, 'acceptOrder']);
+    
+    // Decline an order (with reason in body)
+    Route::post('/orders/{orderId}/decline', [UberWebhookController::class, 'declineOrder']);
+    
+    // Get order status
+    Route::get('/orders/{orderId}', [UberWebhookController::class, 'getOrder']);
+});
+
 Route::post('printer', [PrinterController::class, 'print']);
+
+Route::get('/test-notification', function () {
+    broadcast(new \App\Events\NewNotification('Hello from Pusher 3!'));
+    return response()->json(['sent' => true]);
+});
 

@@ -12,7 +12,7 @@
                         <i class="lab lab-information font-fill-paragraph transition lab-font-size-16"></i>
                     </button>
                 </div>
-                <p class="product-card-list-describe char-limit">
+                <p class="product-card-list-describe char-limit text-white">
                     {{ textShortener(item.description, 65) }}
                 </p>
                 <div class="product-card-list-footer-group">

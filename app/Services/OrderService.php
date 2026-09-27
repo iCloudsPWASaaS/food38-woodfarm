@@ -43,6 +43,9 @@ use App\Http\Requests\OrderStatusRequest;
 use App\Http\Requests\PaymentStatusRequest;
 use App\Http\Requests\TableOrderTokenRequest;
 
+//extra
+use App\Events\NewNotification;
+
 class OrderService
 {
     public object $order;
@@ -130,6 +133,77 @@ class OrderService
             throw new Exception(QueryExceptionLibrary::message($exception), 422);
         }
     }
+
+    public function listall(PaginateRequest $request) //extra
+    {
+        try {
+            $requests    = $request->all();
+            $method      = $request->get('paginate', 0) == 1 ? 'paginate' : 'get';
+            $methodValue = $request->get('paginate', 0) == 1 ? $request->get('per_page', 10) : '*';
+            $orderColumn = $request->get('order_column') ?? 'id';
+            $orderType   = $request->get('order_by') ?? 'desc';
+
+            return Order::with('transaction', 'orderItems', 'branch', 'user')->where(function ($query) use ($requests) {
+                /* if (isset($requests['from_date']) && isset($requests['to_date'])) {
+                    $first_date = Date('Y-m-d', strtotime($requests['from_date']));
+                    $last_date  = Date('Y-m-d', strtotime($requests['to_date']));
+                    $query->whereDate('order_datetime', '>=', $first_date)->whereDate(
+                        'order_datetime',
+                        '<=',
+                        $last_date
+                    );
+                }
+                foreach ($requests as $key => $request) {
+                    if (in_array($key, $this->orderFilter)) {
+                        if ($key === "status") {
+                            $query->where($key, (int)$request);
+                        } else if ($key === 'payment_method') {
+                            if ((int)$request > 0) {
+                                if ((int)$request === 1) {
+                                    $query->where('payment_method', 1)->where('pos_payment_method', null)->whereDoesntHave('transaction');
+                                } else {
+                                    $paymentGateway = PaymentGateway::findOrFail((int)$request);
+                                    $query->whereHas('transaction', function ($q) use ($paymentGateway) {
+                                        $q->where('payment_method', $paymentGateway->slug);
+                                    });
+                                }
+                            } else {
+                                $query->where('pos_payment_method', abs((int)$request));
+                            }
+                        } else {
+                            $query->where($key, 'like', '%' . $request . '%');
+                        }
+                    }
+                    if (in_array($key, $this->exceptFilter)) {
+                        $explodes = explode('|', $request);
+                        if (is_array($explodes)) {
+                            foreach ($explodes as $explode) {
+                                $query->where('order_type', '!=', $explode);
+                            }
+                        }
+                    }
+                } */
+
+                //$query->whereRaw("DATE(order_datetime) = CURDATE()");
+                //$query->whereRaw("DATE(CONVERT_TZ(order_datetime, '+00:00', 'Europe/London')) = CURDATE()");
+
+                if (!empty($requests['date'])) {
+                    $date = Date('Y-m-d', strtotime($requests['date']));
+                    $query->whereDate('order_datetime', $date);
+                } else {
+                    $query->whereRaw("DATE(order_datetime) = CURDATE()");
+                }
+
+            })->orderBy($orderColumn, $orderType)->$method(
+                $methodValue
+            );
+        } catch (Exception $exception) {
+            Log::info($exception->getMessage());
+            throw new Exception(QueryExceptionLibrary::message($exception), 422);
+        }
+    }
+
+    
 
     /**
      * @throws Exception
@@ -300,6 +374,7 @@ class OrderService
 
                 $this->order->order_serial_no = date('dmy') . $this->order->id;
                 $this->order->total_tax       = $totalTax;
+                $this->order->provider_source = "online"; //extra
                 $this->order->save();
 
                 if ($request->address_id) {
@@ -325,6 +400,8 @@ class OrderService
                         'discount'  => $request->discount
                     ]);
                 }
+
+                
 
                 SendOrderMail::dispatch(['order_id' => $this->order->id, 'status' => $request->status]);
                 SendOrderSms::dispatch(['order_id' => $this->order->id, 'status' => $request->status]);
@@ -405,6 +482,7 @@ class OrderService
                 $start = $currentTime->format('H:i');
                 $end = $endTime->format('H:i');
                 $this->order->delivery_time   = "$start - $end";
+                $this->order->provider_source = "pos"; //extra
                 $this->order->save();
 
                 //storing order address
