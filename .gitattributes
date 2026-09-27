@@ -1,5 +1,10 @@
 * text=auto
 
+# Container entrypoints must keep LF or the shebang breaks in the image
+*.sh text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+
 *.blade.php diff=html
 *.css diff=css
 *.html diff=html

@@ -1,0 +1,43 @@
+# Secrets and local-only config must never enter the build context
+.env
+.env.*
+!.env.example
+public/service-account-file.json
+**/service-account-file.json
+error_log
+public/error_log
+
+# Reinstalled inside the image
+node_modules
+vendor
+.git
+.gitignore
+
+# Local/editor noise
+.vscode
+.idea
+.DS_Store
+*.log
+npm-debug.log
+yarn-error.log
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+docker-compose.override.yml
+
+# Storage and generated caches - a volume is mounted at runtime
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*.php
+storage2
+
+# Not needed at runtime
+tests
+phpunit.xml
+.gitattributes
+.gitignore copy
+README.md
+food38.sql
+extra.txt
