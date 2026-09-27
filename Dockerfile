@@ -33,7 +33,7 @@ FROM php:8.2-fpm-bookworm
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      nginx \
+      nginx git \
       libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev \
       libicu-dev unzip curl ca-certificates \
  && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
@@ -89,15 +89,33 @@ WORKDIR /var/www/html
 
 # Manifest first so this layer caches until dependencies actually change.
 COPY composer.json composer.lock ./
+
+# Unbounded memory: Laravel 9 + phpspreadsheet resolves deep dependency trees
+# and composer's default 128M cap aborts the process with exit code 1.
+ENV COMPOSER_MEMORY_LIMIT=-1
+
 # --no-scripts: artisan package:discover needs the app source, which is copied
 # in the next step. --no-autoloader: the real classmap is dumped further down,
 # once the full source tree exists.
+#
+# Packagist/git can drop connections mid-resolve, which also exits 1, so retry
+# once. `--no-progress` + `2>&1` force composer to emit the real failure reason
+# into the build log instead of a silent non-zero exit.
 RUN composer install \
       --no-dev \
       --no-scripts \
       --no-autoloader \
       --prefer-dist \
-      --no-interaction
+      --no-progress \
+      --no-interaction 2>&1 \
+  || (echo "--- composer install failed, retrying once ---" \
+      && composer install \
+           --no-dev \
+           --no-scripts \
+           --no-autoloader \
+           --prefer-dist \
+           --no-progress \
+           --no-interaction 2>&1)
 
 # .dockerignore excludes vendor/ and node_modules/, so this cannot clobber the
 # composer output above.
