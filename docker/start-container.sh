@@ -1,11 +1,14 @@
 #!/bin/bash
-# Runs migrations/caches once, then hands off to php-fpm.
-# Ordered so the app is never serving while the schema is mid-migration.
+# Prepares the app once (storage link, caches, migrations, queue), then runs
+# php-fpm in the background and nginx in the foreground as PID 1's child.
 set -e
 
 cd /var/www/html
 
-# storage:link is idempotent but warns if the link exists
+# nginx needs /run writable when it starts as www-data
+mkdir -p /run/nginx /tmp/client_temp 2>/dev/null || true
+
+# storage:link is idempotent but warns if the link already exists
 php artisan storage:link --force 2>/dev/null || php artisan storage:link || true
 
 # Queue jobs (image downloads, notifications) - QUEUE_CONNECTION=database
@@ -25,7 +28,10 @@ php artisan event:cache
 # Migrations last: anything cached above can depend on the schema
 php artisan migrate --force
 
-# Warm the bytecode cache for the app itself
-find storage/framework -type f -name '*.php' -exec chmod 644 {} \;
+find storage/framework -type f -name '*.php' -exec chmod 644 {} \; 2>/dev/null || true
 
-exec php-fpm --nodaemonize --fpm-config /usr/local/etc/php-fpm.conf
+# php-fpm in the background (nodaemonize would block), nginx in the foreground
+# so the container stays alive and receives signals.
+php-fpm --daemonize
+
+exec nginx -g 'daemon off;'
