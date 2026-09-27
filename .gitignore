@@ -20,7 +20,10 @@ storage/debugbar/
 storage/media-library/
 storage2/*
 
-package-lock.json
+# package-lock.json is intentionally COMMITTED. The Docker build runs `npm ci`,
+# which needs it, and an unpinned resolve pulls webpack 5.111 which breaks
+# laravel-mix 6 (it removed lib/SizeFormatHelpers). See package.json note.
+
 _ide_helper.php
 _ide_helper_models.php
 

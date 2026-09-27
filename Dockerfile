@@ -5,10 +5,12 @@ FROM node:20-alpine AS assets
 
 WORKDIR /app
 
-# package-lock.json is gitignored, so use `npm install` (not `npm ci`).
-# Only the manifest is copied first so this layer caches across code edits.
-COPY package.json ./
-RUN npm install --no-audit --no-fund
+# `npm ci` installs the exact tree from package-lock.json. A plain `npm install`
+# resolves webpack to 5.111.x, which dropped lib/SizeFormatHelpers and breaks
+# laravel-mix 6 ("Cannot find module 'webpack/lib/SizeFormatHelpers'").
+# The lockfile is committed for exactly this reason - do not gitignore it.
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 
 COPY webpack.mix.js postcss.config.js tailwind.config.js ./
 COPY resources/ ./resources/
