@@ -15,24 +15,10 @@ COPY resources/ ./resources/
 RUN npm run production
 
 
-# ---------- PHP dependencies ----------
-FROM composer:2 AS vendor
-
-WORKDIR /app
-
-COPY composer.json composer.lock ./
-# --no-scripts: artisan package:discover needs the app source + .env, which
-# aren't present yet. It runs later, at runtime, via start-container.sh.
-RUN composer install \
-      --no-dev \
-      --no-scripts \
-      --no-autoloader \
-      --prefer-dist \
-      --no-interaction
-
-
-# ---------- Runtime ----------
-FROM php:8.2-fpm-bookworm
+# ---------- PHP base (shared) ----------
+# Both the vendor and runtime stages derive from this, so `composer install`
+# verifies against the exact PHP version and extensions the app will run on.
+FROM php:8.2-fpm-bookworm AS php-base
 
 # Pinned to 8.2: vonage/client-core caps at ~8.2 and lcobucci/clock at ~8.2.
 # Both are production dependencies, so 8.3+ fails `composer install`.
@@ -65,21 +51,56 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+
+# ---------- PHP dependencies ----------
+# Runs on the same base as the runtime, so the platform check sees PHP 8.2
+# with gd/exif/zip present. Using the `composer:2` image here would resolve
+# against whatever PHP that image ships (8.5) and fail on the 8.2 caps.
+FROM php-base AS vendor
+
+# Composer binary only; the stage still builds against php-base's PHP.
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+# --no-scripts: artisan package:discover needs the app source + .env, which
+# aren't present yet. It runs later, at runtime, via start-container.sh.
+RUN composer install \
+      --no-dev \
+      --no-scripts \
+      --no-autoloader \
+      --prefer-dist \
+      --no-interaction
+
+
+# ---------- Runtime ----------
+FROM php-base AS runtime
+
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-app.ini
 COPY docker/php/www.conf /usr/local/etc/php/conf.d/zz-www.conf
 
 WORKDIR /var/www/html
 
-COPY --from=vendor /app/vendor/ ./vendor/
+# App source first. .dockerignore excludes vendor/, so this cannot clobber the
+# composer output copied below.
 COPY . .
+
+COPY --from=vendor /app/vendor/ ./vendor/
 
 # Assets built in the earlier stage overwrite the committed public/ output.
 COPY --from=assets /app/public/ ./public/
 
-# The image must not carry secrets or local-only state.
-RUN rm -f public/service-account-file.json error_log public/error_log \
+# --no-autoloader above deferred this; the app needs vendor/autoload.php, and
+# the classmap should cover the real source tree now that it is present.
+# --no-scripts avoids package:discover, which needs a booted app + APP_KEY.
+RUN composer dump-autoload --optimize --no-dev --no-scripts \
+    && rm -f public/service-account-file.json error_log public/error_log \
     && rm -rf .git node_modules \
-    && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
+    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views \
+               storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
